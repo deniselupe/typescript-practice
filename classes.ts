@@ -68,5 +68,6 @@ g.name = "also not ok";
 */
 
 class Point {
+
     
 }
