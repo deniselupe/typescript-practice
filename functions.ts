@@ -392,8 +392,345 @@ fFour(undefined);
 
 
 /*
-    Optional Parameters in Callbacks 
+    Function Overloads
 
-    This will have its own file as it's kinda a tricky 
-    lesson to understand. Refer to optionalParamsInCallbacks.ts
+    Some JavScript functions can be called in a variety of argument coutns and types.
+
+    For example, you might write a function to produce a Date that takes either a timestamp
+    (one argument) or a month/day/year specification (three arguments).
+
+    In TypeScript, we can specify a function that can be called in different ways by writing 
+    overload signatures. To do this, write some number of function signatures (usually two or more),
+    followed by the body of the function.
+
+    In the example below, we wrote two overloads: one accepting one argument, and another accepting
+    three arguments. These first two signatures are called the overload signatures.
+
+    Then, we wrote a function implementation with a compatible signature. Functions have an 
+    implementation signature, but this signature can't be called directly. Even though we 
+    wrote a function with two optional parameters after the required ones, it can't 
+    be called with two parameters!
 */
+
+function makeDate(timestamp: number): Date;
+function makeDate(m: number, d: number, y: number): Date;
+function makeDate(mOrTimestamp: number, d?: number, y?: number): Date {
+    if (d !== undefined && y !== undefined) {
+        return new Date(y, mOrTimestamp, d);
+    } else {
+        return new Date(mOrTimestamp);  
+    }
+}
+
+// You can invoke makeDate() with 1 argument or 3 arguments, but not 2 arguments
+const d1 = makeDate(12345678);
+const d2 = makeDate(5, 5, 5);
+const d3 = makeDate(1, 3);
+
+
+/*
+    Overload Signatures and the Implementation Signature
+
+    This is a common source of confusion. Often people will write code like this
+    and not understand why there is an error.
+*/
+
+function fn(x: string): void;
+function fn() {
+    // ...
+}
+
+// Expected to be able to call with zero arguments
+fn();
+
+/*
+    Overload Signatures and the Implementation Signature Cont'd
+
+    Again, the signature used to write the function body can't be 
+    "seen" from the outside.
+
+    The signature of the implementation is not visible from the outside. When 
+    writing an overloaded function, you should always have two or more
+    signatures above the implementation of the function.
+
+    The implementation signature must also be compatible with the overload signatures.
+    For example, these functions have errors because the implementation signature doesn't
+    match the overloads in a correct way:
+*/
+
+function fnTwo(x: boolean): void;
+// Argument type isn't right
+// This overload signature is not compatible with its implementation signature.
+function fnTwo(x: string): void;
+function fnTwo(x: boolean) {}
+
+function fnThree(x: string): string;
+// Return type isn't right
+// This overload signature is not compatible with its implementation signature
+function fnThree(x: number): boolean;
+function fnThree(x: string | number) {
+    return "oops";
+}
+
+/*
+    Writing Good Overloads
+
+    Like generics, there are a few guidelines you should follow when using 
+    function overloads. Following these principles will make your function
+    easier to call, easier to understand, and easier to implement.
+
+    Let's consider a function that returns the length of a string or an array.
+
+    This function is fine; we can invoke it with strings or arrays. However, 
+    we can't invoke it with a value that might be a string or an array, 
+    because TypeScript can only resolve a function call to a single overload.
+*/
+
+function len(s: string): number;
+function len(arr: any[]): number;
+function len(x: any) {
+    return x.length;
+}
+
+len(""); // OK
+len([0]); // OK
+len(Math.random() > 0.5 ? "hello" : [0]);
+
+/*
+    Writing Good Overloads Cont'd
+
+    Because both overloads have the same argument count and same return type, 
+    we can instead write a non-overloaded version of the function. 
+
+    This is much better! Callers can invoke this with either sort of value, and 
+    as an added bonus, we don't have to figure out a correct implementation 
+    signature.
+
+    Always prefer parameters with union types instead of overloads when possible.
+*/
+
+function lenTwo(x: any[] | string) {
+    return x.length;
+}
+
+lenTwo(Math.random() > 0.5 ? "hello" : [0]);
+
+/*
+    Object Methods in TypeScript
+
+    Both of the interfaces below define the samething. 
+
+    In the PersonOne interface, the greet property is explicitly defined as a function 
+    that takes no parameters and returns void. This syntax uses an arrow function to define 
+    the function type.
+
+    In the PersonTwo interface, the greet property is defined as a method using the regular 
+    method syntax with parentheses after the method name to indicate that it takes no parameters. 
+    The return type is still defined as void.
+
+    Both syntaxes are valid ways to define object methods in TypeScript interfaces. The choice 
+    between them is mostly a matter of personal preference or team style guide.
+*/
+
+interface PersonOne {
+    name: string;
+    age: number;
+    greet: () => void;
+};
+
+interface PersonTwo {
+    name: string;
+    age: number;
+    greet(): void;
+};
+
+/*
+    Declaring this in a Function
+
+    TypeScript will infer what the 'this' should be in a function via code 
+    flow analysis, for example in the following:
+*/
+
+const user = {
+    id: 123,
+    admin: false,
+    becomeAdmin: function() {
+        this.admin = true;
+    },
+};
+
+/*
+    Declaring this in a Function Cont'd
+
+    Using the 'this' keyword in JavaScript often trips developers up, whether
+    they are a beginner or more experienced.
+
+    If you're new to TypeScript, you'll likely encounter a scenario where you need
+    to type the 'this' keyowrd to bulletproof a section of code.
+
+    With thigns like the 'class' keyword, we don't need to worry too much. TypeScript 
+    will infer the type. But what if we don't know the type?
+
+    We need to be explicit in places where TypeScript is unaware of its surroundings.
+
+    Let's take this simple example:
+*/
+
+const element = document.querySelector('button');
+
+function handleClick() {
+    console.log(this.innerText);
+}
+
+element.addEventListener('click', handleClick);
+
+/*
+    Declaring this in a Function Cont'd
+
+    This is a fairly innocent looking example, and by default
+    we may see no compiler errors depending on your tsconfig.json.
+
+    Let's ensure we have "noImplicitThis" added to our tsconfig.json:
+
+    {
+        "compilerOptions": {
+            "target": "esnext",
+            "noImplicitThis": true
+        }
+    }
+
+    At this point, you will definitely see an error:
+
+    function handleClick() {
+        // X 'this' implicitly has a type 'any' because it does not have a type annotation
+        console.log(this.innerText);
+    }
+
+    Great! TypeScript is telling us of a weakspot in our code, let's fix it up.
+
+    To add the 'this' type definition to our function, first we must be using a 
+    function declaration syntax, and secondly the way we type 'this' is through the 
+    function arguments (however it is not to be confused as a parameter):
+*/
+
+function typedHandleClick(this: HTMLButtonElement) {
+    // this = HTMLButtonElement
+    console.log(this.innerText);
+}
+
+/*
+    Declaring this in a Function Cont'd
+
+    And that's it! You can of course specify more function parameters, 
+    for things like the 'event':
+*/
+
+function typedHandleClickTwo(this: HTMLButtonElement, event: Event) {
+    console.log(this.innerText); // Click me!
+    console.log(event.target.innerText) // Click me!
+}
+
+/*
+    Declaring this in a Function Cont'd
+
+    The TypeScript documentation for this lesson had the following code examples
+    to explain a scenario in which 'this' had to be typed. 
+
+        const user = {
+            id: 123,
+
+            admin: false,
+            becomeAdmin: function () {
+                this.admin = true;
+            },
+        };
+
+        interface DB {
+            filterUsers(filter: (this: User) => boolean): User[];
+        }
+
+        const db = getDB();
+
+        const admins = db.filterUsers(function (this: User) {
+            return this.admin;
+        });
+
+    There were gaps to this code, so I have went ahead and re-wrote it:
+
+        interface User {
+            id: number;
+            name: string;
+            email: string;
+            admin: boolean;
+        };
+
+        interface DB {
+            filterUsers(filterCallback: (this: User) => boolean): User[];
+        };
+
+        function getDB(): DB {
+            const users: User[] = [
+                { id: 1, name: 'Denise', email: 'denise@example.com', admin: false },
+                { id: 2, name: 'Alex', email: 'alex@example.com', admin: true },
+                { id: 3, name: 'Nigel', email: 'nigel@example.com', admin: false },
+                { id: 4, name: 'Spooky', email: 'spooky@example.com', admin: true }
+            ];
+
+            return {
+                filterUsers(filterCallback: (this: User) => boolean): User[] {
+                    return users.filter(filterCallback);
+                }
+            };
+        }
+
+        const db = getDB();
+
+        const admins = db.filterUsers(function (this: User) {
+            return this.admin;
+        });
+
+        console.log(admins);
+
+    However, I was receiving an error from the TypeScript's interpreter that said:
+        "[ERR]: "Executed JavaScript Failed:" 
+        "[ERR]: Cannot read properties of undefined (reading 'admin')"
+    
+    I'm not sure why this is giving my a hard time, looking into it, but in the meantime,
+    it is better to re-write this example so that it does not require the use of 'this'. 
+
+    The function below is just as good as you can still get access to the properties
+    of each user object being iterated.
+*/
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    admin: boolean;
+};
+
+interface DB {
+    filterUsers(filterCallback: (user: User) => boolean): User[];
+};
+
+function getDB(): DB {
+    const users: User[] = [
+        { id: 1, name: 'Denise', email: 'denise@example.com', admin: false },
+        { id: 2, name: 'Alex', email: 'alex@example.com', admin: true },
+        { id: 3, name: 'Nigel', email: 'nigel@example.com', admin: false },
+        { id: 4, name: 'Spooky', email: 'spooky@example.com', admin: true }
+    ];
+
+    return {
+        filterUsers(filterCallback: (user: User) => boolean): User[] {
+            return users.filter(filterCallback);
+        }
+    };
+}
+
+const db = getDB();
+
+const admins = db.filterUsers(function (user: User) {
+    return user.admin;
+});
+
