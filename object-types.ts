@@ -603,3 +603,109 @@ type OrNull<Type> = Type | null;
 type OneOrMany<Type> = Type | Type[];
 type OneOrManyOrNull<Type> = OrNull<OneOrMany<Type>>;
 type OneOrManyOrNullStrings = OneOrManyOrNull<string>;
+
+/*
+    The Array Type
+
+    Generic object types are often some sort of container type that work independently 
+    of the type of elements they contain. It's ideal for data structures to work 
+    this way so that they're re-usable across different data types.
+
+    It turns out we've been working with a type just like that throughout this 
+    handbook: the Array type. Whenever we write out types like `number[]` or `string[]`, 
+    that's really just a shorthand for `Array<number>` or `Array<string>`.
+
+    And much like the Box type above, Array itself is a generic type.
+
+    Modern JavaScript also provides other data structures which are generic, like 
+    Map<K, V>, Set<T>, and Promise<T>. All this really means is that because of how 
+    Map, Set, and Promise behave, they can work with any sets of types.
+*/
+
+function doSomethingArray(value: Array<string>) {
+    //...
+}
+
+let myArrayExample: string[] = ["hello", "world"];
+
+// either of these work!
+doSomethingArray(myArrayExample);
+doSomethingArray(new Array("hello", "world"));
+
+interface Array<Type> {
+    // Gets or sets the length of the array
+    length: number;
+
+    // Removes the last element from an array and returns it
+    pop(): Type | undefined;
+
+    // Appends new elements to an array, and returns the new length of the array
+    push(...items: Type[]): number;
+}
+
+/*
+    The ReadonlyArray Type
+
+    The ReadyonlyArray is a special type that describes arrays that shouldn't
+    be changed.
+
+    Much like the `readonly` modifier for properties, it's mainly a tool 
+    we can use for intent. When we see a function that returns `ReadonlyArray`s, 
+    it tells us we're not meant to change the contents at all, and when we 
+    see a function that consumes `ReadonlyArray`s, it tells us that we can pass 
+    any array into that fnction without worrying that it will change its contents.
+*/
+
+function doStuffReadonlyArray(values: ReadonlyArray<string>) {
+    // We can read from 'values'...
+    const copy = values.slice();
+    console.log(`The first value is ${values[0]}`);
+
+    // ...but we can't mutate 'values'.
+    // Error: Property 'push' does not exist on type 'readonly string[]'.
+    values.push("hello!");
+}
+
+/*
+    The ReadonlyArray Type Cont'd
+
+    Unlike `Array`, there isn't a `ReadonlyArray` constructor that we can use.
+
+    Instead, we can assign regular `Array`s to `ReadonlyArrays`.
+*/
+
+// Error: 'ReadonlyArray' only refers to a type, but is being used as a value here.
+new doStuffReadonlyArray("red", "green", "blue");
+
+const roArray: ReadonlyArray<string> = ["red", "green", "blue"];
+
+/*
+    The ReadonlyArray Type Cont'd
+
+    Just as TypeScript provides a shorthand syntax for `Array<Type>` with `Type[]`,
+    it also provides a shorthand syntax for `ReadonlyArray<Type>` with `readonly Type[]`.
+*/
+
+function doStuffReadonlyArrayTwo(values: readonly string[]) {
+    // We can read from 'values'...
+    const copy = values.slice();
+    console.log(`The first value is ${value[0]}`);
+
+    // ...but we can't mutate 'values'.
+    // Error: Property 'push' does not exist on type 'readonly string[]'.
+    values.push("hello!");
+}
+
+/*
+    The ReadonlyArray Type Cont'd
+
+    One last thing to note is that unlike the `readonly` property modifier, 
+    assignability isn't bidirectional between regular `Array`s and `ReadonlyArray`s.
+*/
+
+let x: readonly string[] = [];
+let y: string[] = [];
+
+// Error: The type `readonly string[]` is `readonly` and cannot be assigned to the mutable type `string[]`.
+x = y;
+y = x;
