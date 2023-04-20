@@ -709,3 +709,168 @@ let y: string[] = [];
 // Error: The type `readonly string[]` is `readonly` and cannot be assigned to the mutable type `string[]`.
 x = y;
 y = x;
+
+/*
+    Tuple Types
+
+    A tuple type is another sort of `Array` type that knows exactly how many 
+    elements it contains, and exactly which types it contains at specific positions.
+
+    Here, `StringNumberPair` is a tuple type of `string` and `number`. Like `ReadonlyArray`, 
+    it has no representation at runtime, but is significant to TypeScript. To the type 
+    system, `StringNumberPair` describes arrays whose 0 index contains a `string`, and 
+    whose 1 index contains a `number`.
+*/
+
+type StringNumberPair = [string, number];
+
+function doSomethingTuple(pair: [string, number]) {
+    // ...
+
+    // Error: Tuple type `[string, number]` of length 2 has no element at index 2.
+    const c = pair[2];
+}
+
+/*
+    Tuple Types Cont'd
+
+    We can also desctructure tuples using JavaScript's array destructuring.
+*/
+
+function doSomethingTupleTwo(stringHash: [string, number]) {
+    const [inputString, hash] = stringHash;
+
+    console.log(inputString);
+    console.log(hash);
+}
+
+/*
+    Tuple Types Cont'd
+
+    Note:
+    Tuple types are useful in heavily convention-based APIs, where each 
+    element's meaning is "obvious". This gives us flexibility in whatever 
+    we want to name our variables when we destructure them. In the above 
+    example, we were able to name elements 0 and 1 to whatever we wanted. 
+
+    However, since not ever user holds the same view of what's obvious, 
+    it may be worth reconsidering whether using objects with descriptive 
+    property names may be better for you API.
+
+
+    Other than those length checks, simple tuple types like these equivalent 
+    to types are versions of `Array`s that declare properties for specific 
+    indexes, and that declare `length` with a numeric literal type. 
+*/
+
+interface StringNumberPairTwo {
+    // specialized properties
+    length: 2;
+    0: string;
+    1: number;
+
+    // Other 'Array<string | number>' members...
+    slice(start?: number, end?: number): Array<string | number>;
+}
+
+/*
+    Tuple Types Cont'd
+
+    Another thing you may be interested in is that tuples can have optional
+    properties by writing out a question mark (? after an element's type).
+
+    Optional tuple element can only come at the end, and also affect the type of 
+    `length`.
+*/
+
+type Either2dOr3d = [number, number, number?];
+
+function setCoordinate(coord: Either2dOr3d) {
+    const [x, y, z] = coord;
+
+    console.log(`Provided coordinates had ${coord.length} dimenstions`);
+}
+
+/*
+    Tuple Types Cont'd
+
+    Tuples can also have rest elements, which have to be an array/tuple type.
+
+    Below:
+    - StringNumberBooleans: Describes a tuple whose first two elements are `string` 
+        and `number` respectively, but which may have any number of `boolean`s following.
+    - StringBooleansNumber: Descrivbes a tuple whose first element is a `string` and 
+        then any number of `boolean`s, and ending with a `number`.
+    - BooleansStringNumber: Describes a tuple whose starting elements are any number of 
+        `boolean`s, and ending with a `string` then a `number`.
+
+
+    A tuple with a rest element has no set 'length' - it only has a set of well-known 
+    elements in different positions.
+*/
+
+type StringNumberBooleans = [string, number, ...boolean[]];
+type StringBooleansNumber = [string, ...boolean[], number];
+type BooleanStringNumber = [...boolean[], string, number];
+
+const a: StringNumberBooleans = ["hello", 1];
+const b: StringNumberBooleans = ["beautiful", 2, true];
+const c: StringNumberBooleans = ["world", 3, true, false, true, false, true];
+
+/*
+    Tuple Types Cont'd
+
+    Why might optional and and rest elements be useful? Well, it allows TypeScript 
+    to correspond tuples with parameter lists. Tuples types can be used in 
+    rest parameter and arguments, so that the following two below are basically equivalent.
+
+    This is handy when you want to take a variable name of arguments with a rest parameter, 
+    and you need a minimum number of elements, but you don't want to introduce immediate 
+    variables.
+*/
+
+function readButtonInput(...args: [string, number, ...boolean[]]) {
+    const [name, version, ...input] = args;
+
+    // ...
+}
+
+function readButtonInputTwo(name: string, version: number, ...input: boolean[]) {
+    // ...
+}
+
+/*
+    readonly Tuple Types
+
+    One final notes about tuple types - tuple types have `readonly` variants, 
+    and can be specified by sticking a `readonly` modifier in front of them - 
+    just like with array shorthand syntax.
+*/
+
+function doSomething(pair: readonly [string, number]) {
+    // As you might expect, writing to any property of a `readonly` tuple isn't allowed in TypeScript
+    // Error: Cannot assign to '0' because it is a read-only property.
+    pair[0] = "hello!";
+}
+
+/*
+    readonly Tuple Types Cont'd
+
+    Tuples tend to be created and left un-modified in most code, so 
+    annotating types as `readonly` tuples when possible is a good 
+    default. This is also important given that array literals with `const`
+    assertions will be inferred with `readonly` tuple type.
+
+    Below, `distanceFromOrigin` never modifies its elements, but expects a 
+    mutable tuple. Since `point` type was inferred as a `readonly [3, 4]`, 
+    it won't be compatible with `[number, number`] since that type can't 
+    guarantee `point` elements won't be mutated. 
+*/
+
+let point = [3, 4] as const;
+
+function distanceFromOrigin([x, y]: readonly [number, number]) {
+    return Math.sqrt(x ** 2 + y ** 2);
+}
+
+distanceFromOrigin(point);
