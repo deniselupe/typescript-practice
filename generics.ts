@@ -292,3 +292,112 @@ let myIdentityTwo: GenericIdentityFnTwo<number> = identity;
     Therefore, `myIdentity` can be used as a function that takes a number 
     argument and returns a number value, just like the `identity` function.
 */
+
+/*
+    Generic Classes
+
+    A generic class has a similar shape to a generic function. 
+
+    Generic classes have a generic type parameter list in angle brackets
+    (<>) following the name of the class:
+*/
+
+class GenericNumber<NumType> {
+    zeroValue: NumType;
+    add: (x: NumType, y: NumType) => NumType;
+}
+
+let myGenericNumber = new GenericNumber<number>();
+myGenericNumber.zeroValue = 0;
+myGenericNumber.add = function (x, y) {
+    return x + y;
+};
+
+/*
+    Generic Classes Cont'd
+
+    This is a pretty literal use of the GenericNumber class, but 
+    you may have noticed that nothing is restricting it to only use the 
+    `number` type. 
+
+    We could have instead used `string` or even more complex objects.
+*/
+
+let stringNumeric = new GenericNumber<string>();
+stringNumeric.zeroValue = "";
+stringNumeric.add = function (x, y) {
+    return x + y;
+};
+
+console.log(stringNumeric.add(stringNumeric.zeroValue, "test"));
+
+/*
+    Generic Classes Cont'd
+
+    Just as with interface, putting the type parameter on the class itself 
+    lets us make sure all of the properties of the class are working with the 
+    same type.
+
+    A class has two sides to its type: the static side and the instance side.
+
+    Generic classes are only generic over their instance side rather than 
+    their static side, so when working with classes, static members can not 
+    use the class's type parameter.
+*/
+
+/*
+    Generic Constraints
+
+    If you remember from an earlier example, you may sometimes want to 
+    write a generic function that works on a set of types where you have some 
+    knowledge about what capabilities that set of types will have. 
+
+    In our loggingIdentity example, we wanted to be able to access the `.length` 
+    property of `arg`, but the compiler could not prove that every type had a 
+    `.length` property, so it warns us that we can't make this assumption.
+*/
+
+function loggingIdentityRecap<Type>(arg: Type): Type {
+    // Error: Property 'length' does not exist on type 'Type'.
+    console.log(arg.length);
+    return arg;
+}
+
+/*
+    Generic Constraints Cont'd
+
+    Instead of working with any and all types, we'd like to constain this function 
+    to work with any and all types that also have the `.length` property. 
+
+    As long as the type has this member, we'll allow it, but it's required to have at
+    least this member.
+
+    To do so, we must list out requirement as a constraint on what `Type` can be.
+
+    To do so, we'll create an interface that describes our constraint. Here, we'll 
+    create an interface that has a single `.length` property and then 
+    we'll use this interface and the `extends` keyword to denote our constraint:
+*/
+
+interface Lengthwise {
+    length: number;
+}
+
+function loggingIdentityLengthOnly<Type extends Lengthwise>(arg: Type): Type {
+    console.log(arg.length); // NO ERROR! <3
+    return arg;
+}
+
+/*
+    Generic Constraints Cont'd
+
+    Because the generic function loggingIdentityLengthOnly is now constrained, it 
+    will no longer work over any and all types:
+
+        // Error: Argument of type 'number' is not assignable to parameter of type 'Lengthwise'.
+        loggingIdentityLengthOnly(3); 
+
+    Instead, we need to pass in values whose type has all the required properties:
+
+        loggingIdentityLengthOnly({ length: 10, value: 3 }); // No error!
+*/
