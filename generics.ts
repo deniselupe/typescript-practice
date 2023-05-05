@@ -346,6 +346,69 @@ console.log(stringNumeric.add(stringNumeric.zeroValue, "test"));
 */
 
 /*
+    Generic Classes Examples
+
+    In the example below, we created a generic class named 
+    `KeyValuePair` witha  type variable in the angle brackets `<T, U>`.
+
+    They `KeyValuePair` class includes two private generic member 
+    variables and a generic function `setKeyValue` that takes two 
+    input arguments of type  `T` and `U`. This allows us to create 
+    an object of `KeyValuePair` with any type of key and value.
+*/
+
+class KeyValuePair<T, U> {
+    private key: T;
+    private val: U;
+
+    setKeyValue(key: T, val: U): void {
+        this.key = key;
+        this.val = val;
+    }
+
+    display(): void {
+        console.log(`Key = ${this.key}, Val = ${this.val}`);
+    }
+}
+
+let kvp1 = new KeyValuePair<number, string>();
+kvp1.setKeyValue(1, "Steve");
+kvp1.display(); // Output: Key = 1, Val = Steve
+
+let kvp2 = new KeyValuePair<string, string>();
+kvp2.setKeyValue("CEO", "Bill");
+kvp2.display(); // Output: Key = CEO, Val = Bill
+
+/*
+    Generic Classes Examples Cont'd
+
+    The generic class can also implement a generic interface.
+
+    In the example below, the generic class `KVProcessor` implements 
+    the generic interface `IKeyValueProcessor`. It does not specify the 
+    type parameter `<T, U>`, instead it allows users to set them themselves.
+
+    Thus, `KVProcessor` class can be used with any type of key and value. 
+
+    A variable is defined as generic interface type with underlying 
+    types for `T` and `U`. So, you don't need to set the generic types for 
+    `KVProcessor`.
+*/
+
+interface IKeyValueProcessor<T, U> {
+    process(key: T, val: U): void;
+}
+
+class KVProcessor<T, U> implements IKeyValueProcessor<T, U> {
+    process(key: T, val: U): void {
+        console.log(`Key = ${key}, Val = ${val}`);
+    }
+}
+
+let proc: IKeyValueProcessor<number, string> = new KVProcessor();
+proc.process(1, "Bill"); // Output: Key = 1, Val = Bill
+
+/*
     Generic Constraints
 
     If you remember from an earlier example, you may sometimes want to 
@@ -401,3 +464,85 @@ function loggingIdentityLengthOnly<Type extends Lengthwise>(arg: Type): Type {
 
         loggingIdentityLengthOnly({ length: 10, value: 3 }); // No error!
 */
+
+/*
+    Using Type Parameters in Generic Constraints
+
+    You can declare a type parameter that is constrained by another type 
+    parameter. For example, here we'd like to get a property 
+    from an object given its name. We'd like to ensure that we're not 
+    accidentally grabbing a property that does not exist on the `obj`, 
+    so we'll place a constraint between the two types:
+*/
+
+function getProperty<Type, Key extends keyof Type>(obj: Type, key: Key) {
+    return obj[key];
+}
+
+let myObj = { a: 1, b: 2, c: 3, d: 4 };
+
+// This is OK
+getProperty(myObj, "a");
+
+// Error: Argument of type '"m"' is not assignable to parameter of type '"a" | "b" | "c" | "d"'.
+getProperty(myObj, "m");
+
+/*
+    Using Class Types in Generics
+
+    When creating factories in TypeScript using generics, it is 
+    necessary to refer to class types by their constructor functions. 
+
+    For example:
+*/
+
+function create<Type>(c: { new(): Type }): Type {
+    return new c();
+}
+
+class Duck {
+    quack: string;
+
+    constructor() {
+        this.quack = "quack!";
+    }
+}
+
+let duck1 = create<Duck>(Duck);
+
+/*
+    Using Class Types in Generics Cont'd
+
+    A more advanced example uses the prototype property to infer 
+    and constrain relationships between the constructor function 
+    and the instance side of class types.
+
+    The pattern below is used to power the mixins design pattern.
+*/
+
+class BeeKeeper {
+    hasMask: boolean = true;
+}
+
+class ZooKeeper {
+    nametag: string = "Mikle";
+}
+
+class Animal {
+    numLegs: number = 4;
+}
+
+class Bee extends Animal {
+    keeper: BeeKeeper = new BeeKeeper();
+}
+
+class Lion extends Animal {
+    keeper: ZooKeeper = new ZooKeeper();
+}
+
+function createInstance<A extends Animal>(c: new() => A): A {
+    return new c();
+}
+
+createInstance(Lion).keeper.nametag;
+createInstance(Bee).keeper.hasMask;
